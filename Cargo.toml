@@ -1,0 +1,38 @@
+[workspace]
+resolver = "2"
+members = [
+    "utils/kernelbase",
+    "utils/wdk-locator",
+    "utils/kalloc",
+    "utils/kdef",
+    "utils/seh",
+    "utils/kapi-kmodule",
+    "utils/kapi",
+    "utils/imports",
+    "utils/wsk",
+    "utils/pattern",
+
+    "driver",
+    "driver-uefi",
+    "driver-standalone",
+    "driver-interface",
+]
+
+[workspace.package]
+version = "0.3.4"
+edition = "2021"
+
+[workspace.dependencies]
+vtd-protocol = { git = "https://github.com/Valthrun/valthrun-driver", rev = "3931af3" }
+
+[profile.dev]
+# Opt-Level of 1 is required to keep stack size small.
+# Important as we only got 8k stack size and allocating all structs
+# on the stack even with Box::new() is expensive.
+opt-level = 1
+panic = "abort"
+# lto = true
+
+[profile.release]
+panic = "abort"
+lto = true

@@ -1,0 +1,14 @@
+[package]
+name = "kalloc"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+utils-imports = { version = "0.1.0", path = "../imports" }
+obfstr = "0.4.3"
+lazy_link = "0.1.1"
+
+[dependencies.winapi]
+git = "https://github.com/Trantect/winapi-rs.git"
+branch = "feature/km"
+features = ["wdm", "ntstatus", "impl-default"]

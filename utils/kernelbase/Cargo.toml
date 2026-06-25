@@ -1,0 +1,15 @@
+[package]
+name = "utils-kernelbase"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+thiserror = { version = "1.0", package = "thiserror-core", default-features = false }
+obfstr = "0.4.3"
+paste = "1.0.14"
+x86 = "0.52.0"
+
+[dependencies.winapi]
+git = "https://github.com/Trantect/winapi-rs.git"
+branch = "feature/km"
+features = ["wdm", "ntstatus", "impl-default"]

@@ -1,0 +1,38 @@
+[package]
+name = "driver-uefi"
+version.workspace = true
+edition.workspace = true
+
+[lib]
+path = "src/lib.rs"
+crate-type = ["cdylib"]
+
+[build-dependencies]
+anyhow = "1.0.72"
+bindgen = "0.69"
+cc = "1.0.79"
+winreg = "0.50.0"
+
+[dependencies]
+log = "0.4.19"
+anyhow = { version = "1.0", default-features = false }
+obfstr = "0.4.3"
+kapi = { version = "0.1.0", path = "../utils/kapi" }
+kapi-kmodule = { version = "0.1.0", path = "../utils/kapi-kmodule" }
+kdef = { version = "0.1.0", path = "../utils/kdef" }
+seh = { version = "0.1.0", path = "../utils/seh" }
+utils-imports = { version = "0.1.0", path = "../utils/imports" }
+driver = { path = "../driver" }
+kalloc = { version = "0.1.0", path = "../utils/kalloc" }
+utils-kernelbase = { version = "0.1.0", path = "../utils/kernelbase" }
+lazy_link = "0.1.1"
+
+[dependencies.compiler_builtins]
+version = "0.1.132"
+features = ["mem"]
+default-features = false
+
+[dependencies.winapi]
+git = "https://github.com/Trantect/winapi-rs.git"
+branch = "feature/km"
+features = ["wdm", "ntstatus", "impl-default"]
