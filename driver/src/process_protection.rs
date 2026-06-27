@@ -1,70 +1,32 @@
-use alloc::{
-    boxed::Box,
-    string::ToString,
-    vec::Vec,
-};
-use core::{
-    mem,
-    slice,
-};
+use alloc::{boxed::Box, string::ToString, vec::Vec};
+use core::{mem, slice};
 
-use anyhow::{
-    anyhow,
-    Context,
-};
-use kapi::{
-    FastMutex,
-    NTStatusEx,
-    ObjectType,
-    Process,
-    UnicodeStringEx,
-};
+use anyhow::{anyhow, Context};
+use kapi::{FastMutex, NTStatusEx, ObjectType, Process, UnicodeStringEx};
 use kapi_kmodule::KModule;
 use kdef::{
-    OB_FLT_REGISTRATION_VERSION,
-    OB_OPERATION_HANDLE_CREATE,
-    OB_OPERATION_HANDLE_DUPLICATE,
-    _OB_CALLBACK_REGISTRATION,
-    _OB_OPERATION_REGISTRATION,
-    _OB_PRE_CREATE_HANDLE_INFORMATION,
-    _OB_PRE_DUPLICATE_HANDLE_INFORMATION,
-    _OB_PRE_OPERATION_INFORMATION,
+    _OB_CALLBACK_REGISTRATION, _OB_OPERATION_REGISTRATION, _OB_PRE_CREATE_HANDLE_INFORMATION,
+    _OB_PRE_DUPLICATE_HANDLE_INFORMATION, _OB_PRE_OPERATION_INFORMATION,
+    OB_FLT_REGISTRATION_VERSION, OB_OPERATION_HANDLE_CREATE, OB_OPERATION_HANDLE_DUPLICATE,
 };
 use log::Level;
 use obfstr::obfstr;
 use once_cell::race::OnceBox;
 use pelite::{
     image::{
-        IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG,
-        IMAGE_GUARDCF64,
-        IMAGE_GUARD_CF_INSTRUMENTED,
+        IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG, IMAGE_GUARDCF64, IMAGE_GUARD_CF_INSTRUMENTED,
         IMAGE_LOAD_CONFIG_DIRECTORY64,
     },
-    pe::{
-        Pe,
-        PeObject,
-        PeView,
-    },
+    pe::{Pe, PeObject, PeView},
 };
 use utils_pattern::ByteSequencePattern;
-use winapi::shared::ntdef::{
-    PVOID,
-    UNICODE_STRING,
-};
+use winapi::shared::ntdef::{PVOID, UNICODE_STRING};
 
 use crate::{
-    imports::{
-        ObRegisterCallbacks,
-        ObUnRegisterCallbacks,
-    },
+    imports::{ObRegisterCallbacks, ObUnRegisterCallbacks},
     offsets::get_nt_offsets,
     util::{
-        self,
-        ErrorResponse,
-        MB_DEFBUTTON3,
-        MB_ICONEXCLAMATION,
-        MB_SYSTEMMODAL,
-        MB_YESNOCANCEL,
+        self, ErrorResponse, MB_DEFBUTTON3, MB_ICONEXCLAMATION, MB_SYSTEMMODAL, MB_YESNOCANCEL,
     },
 };
 
@@ -103,10 +65,10 @@ extern "system" fn process_protection_callback(
     let target_process_id = target_process.get_id();
     if log::log_enabled!(target: "ProcessAttachments", Level::Trace) && false {
         let current_process_name = current_process.get_image_file_name().unwrap_or_default();
-        if current_process_name != obfstr!("svchost.exe") &&
-            current_process_name != obfstr!("WmiPrvSE.exe")
+        if current_process_name != obfstr!("svchost.exe")
+            && current_process_name != obfstr!("WmiPrvSE.exe")
         {
-            log::trace!("process_protection_callback. Caller: {:X} ({:?}), Target: {:X} ({:?}) Flags: {:X}, Operation: {:X}", 
+            log::trace!("process_protection_callback. Caller: {:X} ({:?}), Target: {:X} ({:?}) Flags: {:X}, Operation: {:X}",
                 current_process.get_id(), current_process_name,
                 target_process_id, target_process.get_image_file_name(),
                 info.Flags, info.Operation);
@@ -128,9 +90,9 @@ extern "system" fn process_protection_callback(
         return 0;
     }
 
-    log::debug!("Process 0x{:X} ({}) tries to open a handle to the protected process 0x{:X} ({}) (Operation: 0x{:0<2X})", 
-        current_process.get_id(), current_process.get_image_file_name().unwrap_or("[[ error ]]"), 
-        target_process.get_id(), target_process.get_image_file_name().unwrap_or("[[ error ]]"), 
+    log::debug!("Process 0x{:X} ({}) tries to open a handle to the protected process 0x{:X} ({}) (Operation: 0x{:0<2X})",
+        current_process.get_id(), current_process.get_image_file_name().unwrap_or("[[ error ]]"),
+        target_process.get_id(), target_process.get_image_file_name().unwrap_or("[[ error ]]"),
         info.Operation
     );
 
@@ -207,8 +169,8 @@ fn get_pe_guard_config<'a>(view: &dyn PeObject<'a>) -> Option<&'a IMAGE_GUARDCF6
         .data_directory()
         .get(IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG)?;
 
-    if (dict_load_config.Size as usize) <
-        mem::size_of::<IMAGE_LOAD_CONFIG_DIRECTORY64>() + mem::size_of::<IMAGE_GUARDCF64>()
+    if (dict_load_config.Size as usize)
+        < mem::size_of::<IMAGE_LOAD_CONFIG_DIRECTORY64>() + mem::size_of::<IMAGE_GUARDCF64>()
     {
         return None;
     }
