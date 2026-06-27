@@ -1,46 +1,20 @@
-use alloc::{
-    string::ToString,
-    vec::Vec,
-};
+use alloc::{string::ToString, vec::Vec};
 
-use anyhow::{
-    anyhow,
-    Context,
-};
-use kapi::{
-    KeLowerIrql,
-    KeRaiseIrql,
-    Object,
-    ObjectType,
-    UnicodeStringEx,
-    DISPATCH_LEVEL,
-};
+use anyhow::{anyhow, Context};
+use kapi::{KeLowerIrql, KeRaiseIrql, Object, ObjectType, UnicodeStringEx, DISPATCH_LEVEL};
 use kapi_kmodule::KModule;
 use kdef::{
-    MouseClassServiceCallbackFn,
-    MOUSE_BUTTON_4_DOWN,
-    MOUSE_BUTTON_4_UP,
-    MOUSE_BUTTON_5_DOWN,
-    MOUSE_BUTTON_5_UP,
-    MOUSE_BUTTON_HWHEEL,
-    MOUSE_BUTTON_LEFT_DOWN,
-    MOUSE_BUTTON_LEFT_UP,
-    MOUSE_BUTTON_MIDDLE_DOWN,
-    MOUSE_BUTTON_MIDDLE_UP,
-    MOUSE_BUTTON_RIGHT_DOWN,
-    MOUSE_BUTTON_RIGHT_UP,
-    MOUSE_BUTTON_WHEEL,
-    MOUSE_INPUT_DATA,
+    MouseClassServiceCallbackFn, MOUSE_BUTTON_4_DOWN, MOUSE_BUTTON_4_UP, MOUSE_BUTTON_5_DOWN,
+    MOUSE_BUTTON_5_UP, MOUSE_BUTTON_HWHEEL, MOUSE_BUTTON_LEFT_DOWN, MOUSE_BUTTON_LEFT_UP,
+    MOUSE_BUTTON_MIDDLE_DOWN, MOUSE_BUTTON_MIDDLE_UP, MOUSE_BUTTON_RIGHT_DOWN,
+    MOUSE_BUTTON_RIGHT_UP, MOUSE_BUTTON_WHEEL, MOUSE_INPUT_DATA,
 };
 use obfstr::obfstr;
 use utils_pattern::Signature;
 use vtd_protocol::command::MouseState;
 use winapi::{
     km::wdm::DRIVER_OBJECT,
-    shared::ntdef::{
-        PVOID,
-        UNICODE_STRING,
-    },
+    shared::ntdef::{PVOID, UNICODE_STRING},
 };
 
 use crate::offsets::NtOffsets;
@@ -130,10 +104,18 @@ fn find_mouse_service_callback() -> anyhow::Result<MouseClassServiceCallbackFn> 
             0x03,
             0x07,
         ),
-        /* Windows 11 */
+        /* Windows 11 28000.2269
+        ; fn: MouSendConnectRequest
+        41 B9 10 00 00 00                   mov     r9d, 10h        ; InputBufferLength
+
+        ; 3rd relative_address argument=0x3 because we need only addr,
+        ; first 3 bytes (48 8D 05) is inst+reg x64 lea rax,
+        48 8D 05 E6 15 FF FF                lea     rax, MouseClassServiceCallback
+        B9 03 02 0F 00                      mov     ecx, 0F0203h    ; IoControlCode
+        */
         Signature::relative_address(
             obfstr!("MouseClassServiceCallback"),
-            obfstr!("48 8D 05 ? ? ? ? 48 89 44"),
+            obfstr!("48 8D 05 ? ? ? ? B9 03 02"),
             0x03,
             0x07,
         ),

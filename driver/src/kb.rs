@@ -1,36 +1,17 @@
-use alloc::{
-    string::ToString,
-    vec::Vec,
-};
+use alloc::{string::ToString, vec::Vec};
 
-use anyhow::{
-    anyhow,
-    Context,
-};
-use kapi::{
-    KeLowerIrql,
-    KeRaiseIrql,
-    Object,
-    ObjectType,
-    UnicodeStringEx,
-    DISPATCH_LEVEL,
-};
+use anyhow::{anyhow, Context};
+use kapi::{KeLowerIrql, KeRaiseIrql, Object, ObjectType, UnicodeStringEx, DISPATCH_LEVEL};
 use kapi_kmodule::KModule;
 use kdef::{
-    KeyboardClassServiceCallbackFn,
-    KEYBOARD_FLAG_BREAK,
-    KEYBOARD_FLAG_MAKE,
-    KEYBOARD_INPUT_DATA,
+    KeyboardClassServiceCallbackFn, KEYBOARD_FLAG_BREAK, KEYBOARD_FLAG_MAKE, KEYBOARD_INPUT_DATA,
 };
 use obfstr::obfstr;
 use utils_pattern::Signature;
 use vtd_protocol::command::KeyboardState;
 use winapi::{
     km::wdm::DRIVER_OBJECT,
-    shared::ntdef::{
-        PVOID,
-        UNICODE_STRING,
-    },
+    shared::ntdef::{PVOID, UNICODE_STRING},
 };
 
 use crate::offsets::NtOffsets;
@@ -80,6 +61,21 @@ fn find_keyboard_service_callback() -> anyhow::Result<KeyboardClassServiceCallba
         .with_context(|| anyhow!("failed to locate {} module", obfstr!("kbdclass.sys")))?;
 
     [
+        /* Windows 11 28000.2269
+        ; fn: KbdSendConnectRequest
+        41 B9 10 00 00 00                   mov     r9d, 10h        ; InputBufferLength
+
+        ; 3rd relative_address argument=0x3 because we need only addr,
+        ; first 3 bytes (48 8D 05) is inst+reg x64 lea rax,
+        48 8D 05 E6 19 FF FF                lea     rax, KeyboardClassServiceCallback
+        B9 03 02 0B 00                      mov     ecx, 0B0203h    ; IoControlCode
+        */
+        Signature::relative_address(
+            obfstr!("KeyboardClassServiceCallback (>= ~28000)"),
+            obfstr!("48 8D 05 ? ? ? ? B9 03 02"),
+            0x03,
+            0x07,
+        ),
         /* Windows 11 */
         Signature::relative_address(
             obfstr!("KeyboardClassServiceCallback (>= 22000)"),
