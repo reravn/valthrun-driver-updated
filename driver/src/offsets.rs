@@ -1,31 +1,14 @@
-use alloc::{
-    format,
-    string::ToString,
-};
+use alloc::{format, string::ToString};
 use core::cell::SyncUnsafeCell;
 
 use anyhow::Context;
-use kapi::{
-    KeGetCurrentIrql,
-    DISPATCH_LEVEL,
-};
-use kapi_kmodule::{
-    KModule,
-    KModuleSection,
-};
+use kapi::{KeGetCurrentIrql, DISPATCH_LEVEL};
+use kapi_kmodule::{KModule, KModuleSection};
 use obfstr::obfstr;
-use utils_pattern::{
-    ByteSequencePattern,
-    SearchPattern,
-    Signature,
-    SignatureType,
-};
+use utils_pattern::{ByteSequencePattern, SearchPattern, Signature, SignatureType};
 use winapi::{
     shared::ntdef::PVOID,
-    um::winnt::{
-        IMAGE_SCN_MEM_DISCARDABLE,
-        IMAGE_SCN_MEM_READ,
-    },
+    um::winnt::{IMAGE_SCN_MEM_DISCARDABLE, IMAGE_SCN_MEM_READ},
 };
 
 /// Undocumented function/struct offsets
@@ -108,7 +91,6 @@ pub fn initialize_nt_offsets() -> anyhow::Result<()> {
                 0x01,
                 0x05,
             ),
-
             /* Windows 10 19045.4046 */
             Signature::relative_address(
                 obfstr!("PsGetNextProcess (19045.4046)"),
@@ -167,7 +149,7 @@ pub fn initialize_nt_offsets() -> anyhow::Result<()> {
                 obfstr!("4C 8D A9 ? ? ? ? 33 DB"),
                 0x03,
             ),
-            /* Windows 11 24H2 26100.7462 - ThreadListHead offset 0x370
+                /* Windows 11 24H2 26100.7462 - ThreadListHead offset 0x370
              * Pattern from PspGetPreviousProcessThread:
              *   mov r12, gs:[188h]    ; 65 4C 8B 24 25 88 01 00 00
              *   lea r14, [rcx+370h]   ; 4C 8D B1 70 03 00 00  <- ThreadListHead
@@ -177,6 +159,17 @@ pub fn initialize_nt_offsets() -> anyhow::Result<()> {
                 obfstr!("_EPROCESS.ThreadListHead (26100)"),
                 obfstr!("65 4C 8B 24 25 88 01 00 00 4C 8D B1 ? ? ? ? 48 8B F2"),
                 0x0C,
+            ),
+            /* Windows 11 26H1 28000.2269 - ThreadListHead offset 0x370
+             * Pattern from PspGetPreviousProcessThread:
+             008DDCDD: mov     r12, gs:188h     ; 65 4C 8B 24 25 88 01 00 00
+             008DDCE6: lea     r15, [rcx+370h]  ; 4C 8D B9 70 03 00 00 <- ThreadListHead
+             008DDCED: mov     rsi, rdx         ; 48 8B F2
+             */
+            Signature::offset(
+                obfstr!("_EPROCESS.ThreadListHead (28000)"),
+                obfstr!("4C 8D B9 ? ? ? ? 48 8B F2"),
+                0x03,
             ),
             /* Windows 11 25H2 26200.7462 */
             Signature::offset(
